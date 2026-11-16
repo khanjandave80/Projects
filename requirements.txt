@@ -1,0 +1,10 @@
+Flask>=3.0.0
+flask-cors>=4.0.0
+numpy>=1.26.0
+Pillow>=10.0.0
+qrcode>=7.4.0
+torch>=2.4.0
+transformers>=4.44.0
+sentencepiece>=0.2.0
+opencv-python-headless>=4.10.0
+pyzbar>=0.1.9

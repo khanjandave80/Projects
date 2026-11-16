@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSleuth - Spam & Phishing Image/Text Analyzer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 24px 16px; }
+        .container { max-width: 860px; margin: 0 auto; background: #1e293b; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; overflow: hidden; }
+        
+        .top-nav { display: flex; justify-content: space-between; align-items: center; background: #090d16; padding: 14px 24px; border-bottom: 1px solid #334155; }
+        .portal-brand { font-size: 18px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+        .portal-brand span { color: #f1f5f9; }
+        .exit-btn { background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .exit-btn:hover { background: #dc2626; border-color: #ef4444; color: #ffffff; }
+
+        .header { background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%); color: white; padding: 28px 24px; text-align: center; border-bottom: 1px solid #334155; }
+        .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+        .header p { opacity: 0.85; font-size: 15px; }
+
+        .content { padding: 28px 24px; }
+
+        .warning-banner { background: rgba(245, 158, 11, 0.12); border: 1px solid #f59e0b; color: #fef3c7; padding: 12px 18px; border-radius: 10px; margin-bottom: 22px; font-size: 13.5px; line-height: 1.5; display: flex; align-items: center; gap: 12px; }
+        .warning-banner strong { color: #fbbf24; }
+
+        .tab-bar { display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 12px; }
+        .tab-btn { flex: 1; padding: 12px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .tab-btn.active { background: #2563eb; color: white; border-color: #38bdf8; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+        .drop-zone { border: 2px dashed #475569; border-radius: 10px; padding: 36px 20px; text-align: center; background: #0f172a; cursor: pointer; transition: all 0.2s; position: relative; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+        .drop-icon { font-size: 42px; margin-bottom: 10px; color: #38bdf8; }
+        .drop-title { font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 6px; }
+        .drop-sub { font-size: 13px; color: #94a3b8; }
+        .file-input { display: none; }
+
+        .preview-box { display: none; margin-top: 16px; padding: 14px; background: #090d16; border-radius: 8px; border: 1px solid #334155; text-align: center; position: relative; }
+        .preview-img { max-height: 280px; max-width: 100%; border-radius: 6px; border: 1px solid #475569; }
+        .remove-img-btn { position: absolute; top: 20px; right: 20px; background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #cbd5e1; font-size: 14px; }
+        textarea, input[type="text"] { width: 100%; padding: 12px 14px; background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: #f8fafc; font-size: 14px; transition: border-color 0.2s; }
+        textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        textarea { min-height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.5; resize: vertical; }
+
+        .btn-analyze { width: 100%; padding: 15px; background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 14px; }
+        .btn-analyze:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
+        .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .loading { display: none; text-align: center; padding: 24px; color: #94a3b8; font-size: 14px; background: #0f172a; border-radius: 8px; margin-top: 20px; border: 1px solid #334155; }
+        .spinner { display: inline-block; width: 22px; height: 22px; border: 3px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .extracted-card { margin-top: 22px; padding: 16px 20px; background: #090d16; border: 1px solid #334155; border-radius: 10px; }
+        .extracted-header { font-size: 13px; font-weight: 700; text-transform: uppercase; color: #38bdf8; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .extracted-row { display: flex; margin-bottom: 8px; font-size: 13.5px; }
+        .extracted-row strong { width: 110px; color: #94a3b8; flex-shrink: 0; }
+        .extracted-row span { color: #f1f5f9; word-break: break-all; }
+
+        .result { margin-top: 22px; padding: 22px; border-radius: 10px; display: none; }
+        .result.phishing { background: rgba(220, 38, 38, 0.12); border: 2px solid #ef4444; }
+        .result.safe { background: rgba(22, 163, 74, 0.12); border: 2px solid #22c55e; }
+
+        .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .result-badge { padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .result.phishing .result-badge { background: #ef4444; color: white; }
+        .result.safe .result-badge { background: #22c55e; color: white; }
+        .confidence { font-size: 15px; font-weight: 600; color: #cbd5e1; }
+
+        .prob-bar { width: 100%; height: 10px; background: #0f172a; border-radius: 5px; overflow: hidden; display: flex; margin-top: 8px; margin-bottom: 16px; }
+        .prob-bar-fill-phish { height: 100%; background: #ef4444; transition: width 0.5s; }
+        .prob-bar-fill-safe { height: 100%; background: #22c55e; transition: width 0.5s; }
+
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 14px; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #94a3b8; }
+        .detail-value { font-weight: 600; color: #f1f5f9; }
+
+        .signal-tag { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 12.5px; margin: 4px 6px 4px 0; }
+        .result.phishing .signal-tag { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .result.safe .signal-tag { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Portal Bar with Exit Navigation -->
+        <div class="top-nav">
+            <div class="portal-brand">
+                🛡️ Cyber<span>Sleuth</span>
+                <span style="font-size:12px; background:#0284c7; color:white; padding:2px 8px; border-radius:4px; font-weight:600;">OCR THREAT PORTAL</span>
+            </div>
+            <button type="button" class="exit-btn" id="exitDashboardBtn" onclick="confirmExit()">
+                ⬅ Exit to Main Dashboard
+            </button>
+        </div>
+
+        <div class="header">
+            <h1>Email & Spam Threat Analyzer</h1>
+            <p>Upload a screenshot/photo of the spam email OR paste text — AI extracts sender, recipient, and body to detect scams</p>
+        </div>
+
+        <div class="content">
+            <!-- Warning Banner -->
+            <div class="warning-banner">
+                <span style="font-size: 20px;">⚠️</span>
+                <div>
+                    <strong>Privacy Notice:</strong> Do not upload images containing bank PINs or personal passwords.
+                    Photos are processed locally by the OCR & neural classification engine.
+                </div>
+            </div>
+
+            <!-- Mode Selector Tabs -->
+            <div class="tab-bar">
+                <button type="button" class="tab-btn active" id="tabPhoto" onclick="switchMode('photo')">
+                    📸 Upload / Paste Email Photo
+                </button>
+                <button type="button" class="tab-btn" id="tabText" onclick="switchMode('text')">
+                    ✍️ Paste Email Text
+                </button>
+            </div>
+
+            <!-- Mode 1: Photo Upload / Drag-and-Drop / Clipboard Paste -->
+            <div id="modePhotoSection">
+                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="drop-icon">📷</div>
+                    <div class="drop-title">Click to upload photo, drag & drop, or press Ctrl+V to paste screenshot</div>
+                    <div class="drop-sub">Supports PNG, JPG, JPEG, WEBP screenshots of spam or suspicious emails</div>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*" onchange="handleFileSelect(event)">
+                </div>
+
+                <div class="preview-box" id="previewBox">
+                    <button type="button" class="remove-img-btn" onclick="clearImage()">✕ Remove Photo</button>
+                    <img id="previewImg" class="preview-img" src="" alt="Spam screenshot preview">
+                    <div id="imageFileName" style="font-size:12px; color:#94a3b8; margin-top:8px"></div>
+                </div>
+            </div>
+
+            <!-- Mode 2: Text Paste -->
+            <div id="modeTextSection" style="display:none">
+                <div class="form-group">
+                    <label for="pastedEmailText">Full Email Content</label>
+                    <textarea id="pastedEmailText" placeholder="Paste full email text here (including sender, subject, and body)..."></textarea>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button type="button" class="btn-analyze" id="checkBtn" onclick="analyzeSpam()">
+                🔍 Check If Scam or Safe
+            </button>
+
+            <!-- Loading Spinner -->
+            <div class="loading" id="loading">
+                <span class="spinner"></span> <span id="loadingMsg">Extracting sender, receiver & text via OCR, then running DistilBERT threat model...</span>
+            </div>
+
+            <!-- OCR Extraction Breakdown (Visible when photo is scanned) -->
+            <div class="extracted-card" id="extractedCard" style="display:none">
+                <div class="extracted-header">📸 Extracted Email Telemetry</div>
+                <div class="extracted-row"><strong>From / Sender:</strong> <span id="extSender">--</span></div>
+                <div class="extracted-row"><strong>To / Recipient:</strong> <span id="extReceiver">--</span></div>
+                <div class="extracted-row"><strong>Subject:</strong> <span id="extSubject">--</span></div>
+                <div class="extracted-row"><strong>URLs Found:</strong> <span id="extUrls">--</span></div>
+                <div class="extracted-row"><strong>Body Preview:</strong> <span id="extBody">--</span></div>
+            </div>
+
+            <!-- Result Card -->
+            <div class="result" id="result">
+                <div class="result-header">
+                    <span class="result-badge" id="badge">SAFE</span>
+                    <span class="confidence" id="confidence">Confidence: 95.0%</span>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#94a3b8">
+                    <span id="safeProbText">Safe: 0%</span>
+                    <span id="phishingProbText">Scam / Phishing: 0%</span>
+                </div>
+                <div class="prob-bar">
+                    <div class="prob-bar-fill-safe" id="safeBar" style="width: 50%;"></div>
+                    <div class="prob-bar-fill-phish" id="phishBar" style="width: 50%;"></div>
+                </div>
+
+                <div class="detail-row"><span class="detail-label">Model Engine</span><span class="detail-value" id="modelName">DistilBERT Sequence Classifier</span></div>
+                <div class="detail-row"><span class="detail-label">Scam / Phishing Probability</span><span class="detail-value" id="phishingProb" style="color:#ef4444">--%</span></div>
+                <div class="detail-row"><span class="detail-label">Safe Probability</span><span class="detail-value" id="safeProb" style="color:#22c55e">--%</span></div>
+                <div class="detail-row"><span class="detail-label">Analysis Summary</span><span class="detail-value" id="summaryText" style="font-weight:400">--</span></div>
+
+                <div class="signals" id="signals" style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08)"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = (window.location.origin && window.location.origin !== 'null' && window.location.origin.startsWith('http'))
+            ? window.location.origin
+            : 'http://localhost:5000';
+
+        let currentMode = 'photo';
+        let currentImageBase64 = null;
+        let bypassBeforeUnload = false;
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('tabPhoto').className = 'tab-btn' + (mode === 'photo' ? ' active' : '');
+            document.getElementById('tabText').className = 'tab-btn' + (mode === 'text' ? ' active' : '');
+            document.getElementById('modePhotoSection').style.display = mode === 'photo' ? 'block' : 'none';
+            document.getElementById('modeTextSection').style.display = mode === 'text' ? 'block' : 'none';
+        }
+
+        // Drag & drop handlers
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) loadFile(files[0]);
+        });
+
+        // Paste screenshot from clipboard (Ctrl+V)
+        window.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    switchMode('photo');
+                    loadFile(blob, 'pasted-screenshot.png');
+                    break;
+                }
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) loadFile(file);
+        }
+
+        function loadFile(file, overrideName) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file (PNG, JPG, WEBP).');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImageBase64 = e.target.result;
+                document.getElementById('previewImg').src = currentImageBase64;
+                document.getElementById('imageFileName').textContent = `Loaded: ${overrideName || file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                document.getElementById('previewBox').style.display = 'block';
+                document.getElementById('dropZone').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            currentImageBase64 = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('previewImg').src = '';
+            document.getElementById('previewBox').style.display = 'none';
+            document.getElementById('dropZone').style.display = 'block';
+            document.getElementById('extractedCard').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function confirmExit() {
+            const confirmed = window.confirm('Are you sure you want to exit to the main dashboard?');
+            if (confirmed) {
+                bypassBeforeUnload = true;
+                window.location.href = '/';
+            }
+        }
+
+        window.addEventListener('beforeunload', function(e) {
+            if (bypassBeforeUnload) return;
+            if (currentImageBase64 || document.getElementById('pastedEmailText').value.trim()) {
+                const msg = 'Are you sure you want to leave? Your entered data will be lost.';
+                e.preventDefault();
+                e.returnValue = msg;
+                return msg;
+            }
+        });
+
+        async function analyzeSpam() {
+            const btn = document.getElementById('checkBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const extractedCard = document.getElementById('extractedCard');
+
+            let payload = {};
+
+            if (currentMode === 'photo') {
+                if (!currentImageBase64) {
+                    alert('Please upload or paste an email screenshot/photo first.');
+                    return;
+                }
+                payload = { image: currentImageBase64 };
+            } else {
+                const text = document.getElementById('pastedEmailText').value.trim();
+                if (!text) {
+                    alert('Please paste some email content to analyze.');
+                    return;
+                }
+                payload = {
+                    vector: 'email',
+                    item: { body: text }
+                };
+            }
+
+            const ok = window.confirm('Are you sure you want to analyze this email for scam/phishing threats?');
+            if (!ok) return;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Analyzing...';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            extractedCard.style.display = 'none';
+
+            try {
+                let data = null;
+                if (currentMode === 'photo') {
+                    const res = await fetch(`${API_URL}/analyze-email-image`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        const errJson = await res.json().catch(() => ({}));
+                        throw new Error(errJson.error || `HTTP ${res.status}`);
+                    }
+                    data = await res.json();
+                } else {
+                    const res = await fetch(`${API_URL}/ml-hint`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    data = await res.json();
+                }
+
+                // If OCR extracted telemetry exists, show extracted card
+                if (data.extracted) {
+                    document.getElementById('extSender').textContent = data.extracted.sender || '(None detected)';
+                    document.getElementById('extReceiver').textContent = data.extracted.receiver || '(None detected)';
+                    document.getElementById('extSubject').textContent = data.extracted.subject || '(None detected)';
+                    document.getElementById('extUrls').textContent = data.extracted.urls || '(None detected)';
+                    document.getElementById('extBody').textContent = (data.extracted.body || '').slice(0, 300) + (data.extracted.body?.length > 300 ? '...' : '');
+                    extractedCard.style.display = 'block';
+                }
+
+                const isPhish = (data.predicted_label || '').toLowerCase() === 'phishing';
+                const labelText = isPhish ? '🚨 SCAM / PHISHING DETECTED' : '🛡️ SAFE / LEGITIMATE';
+                const confVal = data.confidence || 0;
+                const phishingProb = data.phishing_prob !== undefined ? data.phishing_prob : (isPhish ? confVal : +(100 - confVal).toFixed(1));
+                const safeProb = data.safe_prob !== undefined ? data.safe_prob : (!isPhish ? confVal : +(100 - confVal).toFixed(1));
+
+                document.getElementById('badge').textContent = labelText;
+                document.getElementById('confidence').textContent = `Confidence: ${confVal}%`;
+                document.getElementById('modelName').textContent = data.model_name || 'DistilBERT Neural Classifier';
+                document.getElementById('phishingProb').textContent = `${phishingProb}%`;
+                document.getElementById('safeProb').textContent = `${safeProb}%`;
+                document.getElementById('summaryText').textContent = data.summary || 'Classification completed.';
+
+                document.getElementById('safeProbText').textContent = `Safe: ${safeProb}%`;
+                document.getElementById('phishingProbText').textContent = `Scam / Phishing: ${phishingProb}%`;
+                document.getElementById('safeBar').style.width = `${safeProb}%`;
+                document.getElementById('phishBar').style.width = `${phishingProb}%`;
+
+                const signalsContainer = document.getElementById('signals');
+                signalsContainer.innerHTML = '<h4 style="font-size:12px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase">Detection Signals</h4>';
+                (data.signals || []).forEach(sig => {
+                    const tag = document.createElement('span');
+                    tag.className = 'signal-tag';
+                    tag.textContent = sig;
+                    signalsContainer.appendChild(tag);
+                });
+
+                result.className = 'result ' + (isPhish ? 'phishing' : 'safe');
+                result.style.display = 'block';
+                result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                alert('Analysis failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Check If Scam or Safe';
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
