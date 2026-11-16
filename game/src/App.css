@@ -1,0 +1,3 @@
+/* App styles */
+:root { --bg: #090d16; }
+body { background: var(--bg); color: #f8fafc; }
